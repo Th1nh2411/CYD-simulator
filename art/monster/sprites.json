@@ -1,0 +1,135 @@
+{
+  "header": "src/app/ui/monster/monster_art.h",
+  "namespace": "ui::monster::art",
+  "palettes": {
+    "Fire": {
+      "o": "#391808 outline",
+      "b": "#f76939 body",
+      "s": "#b54d29 shade",
+      "c": "#ffe3a5 belly",
+      "e": "#292031 eye",
+      "w": "#ffffff shine",
+      "f": "#ff4918 flame",
+      "y": "#ffe34a flame light",
+      "p": "#7b3418 mouth",
+      "k": "#398ef7 scarf",
+      "K": "#2161a5 scarf shade"
+    },
+    "Grass": {
+      "o": "#183029 outline",
+      "b": "#7bcba5 body",
+      "s": "#5a967b shade",
+      "c": "#cef3ce belly",
+      "e": "#292031 eye",
+      "w": "#ffffff shine",
+      "f": "#399a42 leaves",
+      "y": "#94e373 leaves light",
+      "p": "#396552 mouth",
+      "k": "#ffd342 scarf",
+      "K": "#ad8e29 scarf shade"
+    },
+    "Water": {
+      "o": "#183039 outline",
+      "b": "#7bc3f7 body",
+      "s": "#5a92b5 shade",
+      "c": "#ffebb5 belly",
+      "e": "#292031 eye",
+      "w": "#ffffff shine",
+      "f": "#ce7939 shell",
+      "y": "#f7c373 shell light",
+      "p": "#39617b mouth",
+      "k": "#ef494a scarf",
+      "K": "#9c3031 scarf shade"
+    },
+    "Tile": {
+      "g": "#73c352 grass",
+      "d": "#529639 dark grass",
+      "l": "#94d37b light grass",
+      "r": "#f75152 red",
+      "w": "#fffbff white",
+      "y": "#ffd342 yellow",
+      "t": "#529239 tall grass",
+      "T": "#396d29 tall grass dark"
+    },
+    "Foe": {
+      "o": "#39384a outline",
+      "k": "#cecbde paper shade",
+      "w": "#fffbff paper",
+      "s": "#4a8631 shadow",
+      "r": "#ef3839 seal",
+      "g": "#addbff wing"
+    },
+    "Emote": {"o": "#313042 outline", "w": "#ffffff bubble", "r": "#ef3839 red", "b": "#3979ef blue"}
+  },
+  "sheets": [
+    {
+      "png": "tiles.png",
+      "palette": "Tile",
+      "frame": [16, 16],
+      "frames": [["TileGrass", "TileGrass2", "TileFlowers", "TileTall"]],
+      "about": "필드 바닥 타일: 풀, 풀 2, 꽃, 키 큰 풀 (설정의 풀밭 색을 따름)"
+    },
+    {"png": "foe.png", "palette": "Foe", "frame": [24, 24], "frames": [["Envelope"]], "about": "배틀 상대: 날개 달린 편지 (승인 요청이 오면 나타남)"},
+    {
+      "png": "emotes.png",
+      "palette": "Emote",
+      "frame": [12, 12],
+      "frames": [["EmoteBang", "EmoteHeart", "EmoteZzz", "EmoteAnger", "EmoteDrop", "EmoteDots"]],
+      "about": "머리 위 말풍선: 느낌표, 하트, 졸림, 화남, 땀, 말줄임표"
+    }
+  ],
+  "characters": {
+    "type": "Species",
+    "about": "스타팅 몬스터. 모두 같은 칸 배치의 시트 두 장을 갖고, 색은 자기 팔레트로 그립니다.",
+    "sheets": [
+      {
+        "png": "{id}.png",
+        "frame": [16, 16],
+        "about": "필드: 16×16 칸, 2열 × 5행",
+        "frames": [["Down0", "Down1"], ["Up0", "Up1"], ["Side0", "Side1"], ["Held0", "Held1"], ["Sleep", null]]
+      },
+      {"png": "{id}_back.png", "frame": [32, 32], "about": "배틀: 내 쪽에서 본 뒷모습, 32×32 한 칸", "frames": [["Back"]]}
+    ],
+    "roles": {
+      "Down0": "앞(아래)을 보고 서 있기",
+      "Down1": "앞을 보고 걷기 (발을 내딛음)",
+      "Up0": "뒤(위)를 보고 서 있기",
+      "Up1": "뒤를 보고 걷기",
+      "Side0": "옆(오른쪽)을 보고 서 있기. 왼쪽은 뒤집어서 씀",
+      "Side1": "옆을 보고 걷기",
+      "Held0": "손에 들려서 버둥거림 1",
+      "Held1": "버둥거림 2 (번갈아 보임)",
+      "Sleep": "웅크리고 잠",
+      "Back": "배틀: 뒷모습 (특징이 보이게)"
+    },
+    "list": [
+      {
+        "id": "fire",
+        "palette": "Fire",
+        "label": "불꽃",
+        "preset": "ember",
+        "move": "flame",
+        "accentNames": ["불꽃", "불꽃 속"],
+        "defaults": {"name": "엠버", "body": "#f46a3c", "belly": "#f8e0a0", "accent": "#f84818", "accent2": "#ffe048", "scarf": "#3c8cf0"}
+      },
+      {
+        "id": "grass",
+        "palette": "Grass",
+        "label": "풀",
+        "preset": "leaf",
+        "move": "leaf",
+        "accentNames": ["잎", "잎 밝은 쪽"],
+        "defaults": {"name": "잎새", "body": "#78c8a0", "belly": "#c8f0c8", "accent": "#3a9a40", "accent2": "#90e070", "scarf": "#f8d040"}
+      },
+      {
+        "id": "water",
+        "palette": "Water",
+        "label": "물",
+        "preset": "bubble",
+        "move": "bubble",
+        "accentNames": ["등껍질", "등껍질 테두리"],
+        "defaults": {"name": "방울", "body": "#78c0f0", "belly": "#f8e8b0", "accent": "#c87838", "accent2": "#f0c070", "scarf": "#e84848"}
+      }
+    ]
+  }
+}

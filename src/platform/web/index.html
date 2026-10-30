@@ -1,0 +1,184 @@
+<!doctype html>
+<!-- Simulator page: the screen (sim.js, built from the firmware sources) next
+     to the device's own settings page (studio.html, generated from web_page.h).
+     Served by tools/web/sim.py. -->
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CYD Simulator</title>
+<style>
+:root{--bg:#0e101e;--panel:#181b30;--line:#2c3052;--text:#e8e8f0;--dim:#9a9cc0;--accent:#6ec8ff;--err:#ff7a8a}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:14px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+header{display:flex;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;flex:1}
+#status{color:var(--dim);font-size:12px}
+button{background:#262a4a;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font:inherit;cursor:pointer}
+button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.hint{color:var(--dim);font-size:12px}
+main{flex:1;display:flex;min-height:0}
+#device{flex:none;padding:16px;display:flex;flex-direction:column;gap:12px;align-items:center;overflow:auto;max-width:100%}
+.bezel{background:#05060c;padding:14px;border-radius:14px;border:1px solid var(--line)}
+canvas{display:block;image-rendering:pixelated;cursor:pointer;touch-action:none;max-width:100%}
+#log{align-self:stretch;margin:0;font:12px/1.5 ui-monospace,Consolas,monospace;color:var(--dim);white-space:pre-wrap;max-height:30vh;overflow:auto}
+iframe{flex:1;min-width:0;border:0;border-left:1px solid var(--line)}
+#error{display:none;position:fixed;left:16px;right:16px;bottom:16px;margin:0;background:#2a0f16;color:var(--err);border:1px solid var(--err);border-radius:8px;padding:12px;font:12px/1.4 ui-monospace,Consolas,monospace;white-space:pre-wrap;max-height:50vh;overflow:auto}
+@media (max-width:900px){main{flex-direction:column;overflow:auto}iframe{flex:none;height:80vh;border-left:0;border-top:1px solid var(--line)}}
+</style></head><body>
+<header><h1>CYD 시뮬레이터</h1><span id="status">불러오는 중…</span>
+<span class="hint">기울이기: 방향키 · 흔들기: S</span>
+<button id="sound" class="on">🔊 소리 켜기 / Sound on</button>
+<button data-scale="1">1×</button><button data-scale="2">2×</button><button data-scale="3">3×</button></header>
+<main>
+<div id="device"><div class="bezel"><canvas id="screen" width="320" height="240"></canvas></div><pre id="log"></pre></div>
+<iframe id="studio" src="studio.html" title="Blob Studio"></iframe>
+</main>
+<pre id="error"></pre>
+<script>
+// In a function so nothing collides with sim.js globals; it only shares Module
+(() => {
+const $ = s => document.querySelector(s);
+const canvas = $('#screen');
+const setStatus = t => { $('#status').textContent = t; };
+function log(line) {
+  const l = $('#log');
+  l.textContent += line + '\n';
+  l.scrollTop = l.scrollHeight;
+}
+
+let ready;
+const runtimeReady = new Promise(r => { ready = r; });
+window.Module = {
+  print: log,
+  printErr: line => { console.warn(line); log(line); },
+  postRun: [() => { setStatus(''); ready(); }],
+};
+
+// The settings page (studio.html) sends its /api/* calls here instead of over HTTP
+window.simApi = async (method, path, body) => {
+  startAudio();  // a click in the settings page counts as one on the page, so sound may start now
+  await runtimeReady;
+  const code = Module.ccall('sim_api', 'number', ['string', 'string', 'string'], [method, path, body || '']);
+  return new Response(Module.UTF8ToString(Module._sim_reply()), {status: code, headers: {'Content-Type': 'application/json'}});
+};
+
+// Mouse / finger on the canvas is the touch panel, in screen pixels
+function pointer(e, down) {
+  if (!Module._sim_pointer) return;
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) * canvas.width / r.width);
+  const y = Math.floor((e.clientY - r.top) * canvas.height / r.height);
+  Module._sim_pointer(Math.min(Math.max(x, 0), canvas.width - 1), Math.min(Math.max(y, 0), canvas.height - 1), down ? 1 : 0);
+}
+// The board's speaker: 16 kHz blocks from the synth (main.cpp pumpAudio), played in order.
+// Browsers start audio only after a click, so the context comes with the first one.
+let audioCtx = null;
+function startAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return;
+  }
+  try { audioCtx = new AudioContext(); } catch (e) { return; }
+  window.simAudio = {
+    time: () => audioCtx.state === 'running' ? audioCtx.currentTime : -1,  // -1: not allowed to play yet
+    queue: (pcm, at) => {
+      const b = audioCtx.createBuffer(1, pcm.length, 16000), ch = b.getChannelData(0);
+      for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+      const src = audioCtx.createBufferSource();
+      src.buffer = b;
+      src.connect(audioCtx.destination);
+      src.start(at);
+    },
+    // A whole recording (her voice from the brain): one line at a time, a new one cuts the last
+    playWav: wav => audioCtx.state !== 'running' ? null : audioCtx.decodeAudioData(wav).then(b => {
+      if (window.simVoice) try { simVoice.stop(); } catch (e) {}
+      const src = audioCtx.createBufferSource();
+      src.buffer = b;
+      src.connect(audioCtx.destination);
+      src.start();
+      window.simVoice = src;
+    }),
+  };
+}
+addEventListener('pointerdown', startAudio, true);
+// Browsers start sound only after a click on the page: until then this button says so
+$('#sound').onclick = startAudio;
+setInterval(() => { $('#sound').style.display = audioCtx && audioCtx.state === 'running' ? 'none' : ''; }, 500);
+addEventListener('keydown', startAudio, true);
+canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pointer(e, true); });
+canvas.addEventListener('pointermove', e => { if (e.buttons) pointer(e, true); });
+canvas.addEventListener('pointerup', e => pointer(e, false));
+canvas.addEventListener('pointercancel', e => pointer(e, false));
+
+// Arrow keys tilt the simulated device 30 degrees that way while held; S shakes it.
+// The sensor reads the push holding it up: tilted right, it reads toward the left.
+const held = new Set();
+let shakeUntil = 0;
+function motion() {
+  if (!Module._sim_motion) return;
+  let gx = (held.has('ArrowRight') ? 1 : 0) - (held.has('ArrowLeft') ? 1 : 0);
+  let gy = (held.has('ArrowDown') ? 1 : 0) - (held.has('ArrowUp') ? 1 : 0);
+  const s = Math.sin(Math.PI / 6), c = Math.cos(Math.PI / 6);
+  let ax = -gx * s, ay = -gy * s, az = gx || gy ? c : 1;
+  if (performance.now() < shakeUntil) ax += 1.2 * Math.sin(performance.now() / 1000 * 2 * Math.PI * 6);
+  Module._sim_motion(ax, ay, az);
+}
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key.startsWith('Arrow')) { held.add(e.key); e.preventDefault(); }
+  else if (e.key === 's' || e.key === 'S') shakeUntil = performance.now() + 600;
+  else return;
+  motion();
+});
+addEventListener('keyup', e => { held.delete(e.key); motion(); });
+setInterval(() => { if (performance.now() < shakeUntil + 50) motion(); }, 16);
+
+function setScale(s) {
+  canvas.style.width = canvas.width * s + 'px';
+  for (const b of document.querySelectorAll('[data-scale]')) b.classList.toggle('on', +b.dataset.scale === s);
+  try { localStorage.setItem('sim.scale', s); } catch (e) {}
+}
+for (const b of document.querySelectorAll('[data-scale]')) b.onclick = () => setScale(+b.dataset.scale);
+let scale = 2;
+try { scale = +localStorage.getItem('sim.scale') || 2; } catch (e) {}
+runtimeReady.then(() => setScale(scale));  // the board sets the canvas size at startup
+
+// Dev server only (tools/web/sim.py --aibuddy HB-0006): be that AI Buddy device. sim.py holds its MQTT
+// link; frames come as server-sent events, the firmware's protocol answers through /__aibuddy/up.
+runtimeReady.then(async () => {
+  let info = null;
+  try { info = await (await fetch('__aibuddy', {cache: 'no-store'})).json(); } catch (e) { return; }
+  if (!info) return;
+  Module.ccall('sim_aibuddy_begin', null, ['string', 'string', 'number'],
+               [info.device, info.wifiHash, -new Date().getTimezoneOffset()]);
+  const events = new EventSource('__aibuddy/events');
+  events.onmessage = m => {
+    const e = JSON.parse(m.data);
+    if (e.type === 'frame') Module.ccall('sim_aibuddy_frame', null, ['string'], [e.json]);
+    else Module.ccall('sim_aibuddy_link', null, ['number'], [e.type === 'connected' ? 1 : 0]);
+  };
+  events.onerror = () => Module.ccall('sim_aibuddy_link', null, ['number'], [0]);
+});
+
+// Dev server only: reload after a rebuild, show compile errors
+(async () => {
+  let seen = null;
+  for (;;) {
+    try {
+      const r = await fetch('__build', {cache: 'no-store'});
+      if (r.status === 404) return;  // plain static server
+      const b = await r.json();
+      if (seen !== null && b.version !== seen) location.reload();
+      seen = b.version;
+      $('#error').textContent = b.error || '';
+      $('#error').style.display = b.error ? 'block' : 'none';
+      if (b.error) setStatus('빌드 실패: 이전 빌드로 실행 중');
+      else if ($('#status').textContent.startsWith('빌드')) setStatus('');
+    } catch (e) {}  // server restarting
+    await new Promise(r => setTimeout(r, 700));
+  }
+})();
+})();
+</script>
+<script src="sim.js"></script>
+</body></html>

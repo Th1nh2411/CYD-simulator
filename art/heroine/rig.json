@@ -1,0 +1,69 @@
+{
+  "name": "Heroine",
+  "namespace": "ui::heroine",
+  "source": "base_source.webp",
+  "face": {
+    "window": [380, 225, 680, 445],
+    "shapes": {
+      "eyes": [[451, 308, 56, 26], [595, 294, 56, 26]],
+      "brows": [[455, 262, 52, 22], [577, 247, 52, 22]],
+      "mouth": [[532, 386, 40, 24]]
+    }
+  },
+  "frames": {
+    "EyesHalf": {"edit": "eyes_half", "regions": "eyes"},
+    "EyesClosed": {"edit": "eyes_closed", "regions": "eyes"},
+    "EyesSmile": {"edit": "eyes_smile", "regions": "eyes brows"},
+    "LookLeft": {"edit": "look_left", "regions": "eyes", "sameEyes": true},
+    "LookRight": {"edit": "look_right", "regions": "eyes", "sameEyes": true},
+    "Surprised": {"edit": "face_surprised", "regions": "eyes brows mouth"},
+    "Sad": {"edit": "face_sad", "regions": "eyes brows mouth"},
+    "Annoyed": {"edit": "face_annoyed", "regions": "eyes brows mouth"},
+    "MouthHalf": {"edit": "mouth_half", "regions": "mouth"},
+    "MouthOpen": {"edit": "mouth_open", "regions": "mouth"},
+    "MouthSmile": {"edit": "mouth_smile", "regions": "mouth"},
+    "MouthO": {"edit": "mouth_o", "regions": "mouth"},
+    "MouthPout": {"edit": "mouth_pout", "regions": "mouth"}
+  },
+  "portrait": {
+    "crop": [0, 760],
+    "height": 285,
+    "shown": 240,
+    "below": 12,
+    "tilt": {"levels": 3, "step": 0.02, "pivot": [192, 182], "neck": [150, 182], "hair": [175, 205], "grid": 10},
+    "chest": 172,
+    "out": "src/app/ui/heroine/heroine_portrait"
+  },
+  "backdrop": {
+    "svg": "room.svg",
+    "out": "src/app/ui/heroine/heroine_room",
+    "name": "Room",
+    "size": [320, 240],
+    "periods": [
+      {
+        "name": "Morning",
+        "daylight": 1.0,
+        "night": 0.0,
+        "colors": {"wall": "#f6eadc", "sky": "#8cc8f2", "skyLow": "#fde6c6", "far": "#b8cce0", "frame": "#fbf8f2", "curtain": "#f6dce0"}
+      },
+      {
+        "name": "Day",
+        "daylight": 1.0,
+        "night": 0.0,
+        "colors": {"wall": "#f3e8dc", "sky": "#5cacf0", "skyLow": "#cfe9fc", "far": "#9cbcd8", "frame": "#fbf8f2", "curtain": "#f4d8de"}
+      },
+      {
+        "name": "Evening",
+        "daylight": 0.5,
+        "night": 0.0,
+        "colors": {"wall": "#f0cdb4", "sky": "#7a6aaa", "skyLow": "#ffa878", "far": "#8a6a8a", "frame": "#f6e2d0", "curtain": "#f2c2b8"}
+      },
+      {
+        "name": "Night",
+        "daylight": 0.0,
+        "night": 1.0,
+        "colors": {"wall": "#5c5a84", "sky": "#141c40", "skyLow": "#34427a", "far": "#20244a", "frame": "#8a88aa", "curtain": "#7a6a92"}
+      }
+    ]
+  }
+}

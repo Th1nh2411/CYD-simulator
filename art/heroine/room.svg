@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="640" height="480"
+     data-rig="room"
+     data-colors="wall:#f3e8dc sky:#6cb4f0 skyLow:#d4ecfc far:#a6c2da frame:#fbf8f2 curtain:#f4d8de">
+  <!-- Backdrop of the visual-novel character: her room by the window. The
+       character code sets these colors for the time of day (morning, day,
+       evening, night); Daylight and Night fade clouds, stars and the moon. -->
+
+  <rect data-c="wall #ffffff 4" data-c2="wall #6a5a50 5" x="0" y="0" width="320" height="240"/>
+  <rect data-c="wall #4a3a30 3" x="0" y="172" width="320" height="68"/>
+  <rect data-c="frame #6a5a50 4" x="0" y="171" width="320" height="3"/>
+
+  <!-- Window -->
+  <rect data-c="frame #6a5a50 3" x="27" y="5" width="266" height="152" rx="2"/>
+  <rect data-c="frame" x="28" y="6" width="264" height="150"/>
+  <rect id="window" data-c="sky" data-c2="skyLow" x="35" y="13" width="250" height="136"/>
+  <g>
+    <path data-c="#ffffff" opacity="0.9" data-alpha="Daylight" data-clip="window"
+          d="M62,58 C58,50 66,44 74,46 C76,38 88,34 96,40 C102,34 114,36 116,44 C124,44 128,52 122,58 Z"/>
+    <path data-c="#ffffff" opacity="0.85" data-alpha="Daylight" data-clip="window"
+          d="M206,46 C204,40 210,36 216,38 C218,31 228,28 234,33 C240,28 250,30 252,37 C259,37 262,44 257,47 Z"/>
+    <path data-c="#ffffff" opacity="0.7" data-alpha="Daylight" data-clip="window"
+          d="M182,98 C181,94 185,91 189,92 C191,88 198,87 201,91 C206,90 209,94 206,98 Z"/>
+  </g>
+  <g>
+    <circle data-c="#fff4c8" opacity="0.22" data-alpha="Night" data-clip="window" cx="250" cy="44" r="17"/>
+    <path data-c="#fff4c8" data-alpha="Night" data-clip="window"
+          d="M250,33 C256,33 261,38 261,44 C261,50 256,55 250,55 C253,52 255,48 255,44 C255,40 253,36 250,33 Z"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="60,27 60.7,29.3 63,30 60.7,30.7 60,33 59.3,30.7 57,30 59.3,29.3"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="86,59 86.6,61.4 89,62 86.6,62.6 86,65 85.4,62.6 83,62 85.4,61.4"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="120,21 120.6,23.4 123,24 120.6,24.6 120,27 119.4,24.6 117,24 119.4,23.4"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="210,20 210.6,22.4 213,23 210.6,23.6 210,26 209.4,23.6 207,23 209.4,22.4"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="230,64 230.5,66 232.5,66.5 230.5,67 230,69 229.5,67 227.5,66.5 229.5,66"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="272,94 272.5,96 274.5,96.5 272.5,97 272,99 271.5,97 269.5,96.5 271.5,96"/>
+    <polygon data-c="#fffbe8" data-alpha="Night" points="52,94 52.5,96 54.5,96.5 52.5,97 52,99 51.5,97 49.5,96.5 51.5,96"/>
+    <circle data-c="#fffbe8" opacity="0.8" data-alpha="Night" cx="100" cy="30" r="0.9"/>
+    <circle data-c="#fffbe8" opacity="0.8" data-alpha="Night" cx="72" cy="96" r="0.9"/>
+    <circle data-c="#fffbe8" opacity="0.8" data-alpha="Night" cx="232" cy="16" r="0.9"/>
+    <circle data-c="#fffbe8" opacity="0.8" data-alpha="Night" cx="262" cy="70" r="0.9"/>
+    <circle data-c="#fffbe8" opacity="0.8" data-alpha="Night" cx="140" cy="20" r="0.9"/>
+  </g>
+  <path data-c="far" data-c2="far #ffffff 6" data-clip="window"
+        d="M35,149 L35,124 L44,124 L44,116 L56,116 L56,128 L66,128 C68,118 78,114 86,120 C92,114 102,118 102,126 L112,126 L112,112 L122,112 L122,120 L134,120 L134,108 L146,108 L146,124 L174,124 L174,104 L186,104 L186,118 L198,118 C200,110 210,108 216,114 C222,108 232,112 232,122 L244,122 L244,112 L256,112 L256,126 L266,126 L266,118 L276,118 L276,130 L285,130 L285,149 Z"/>
+  <g>
+    <rect data-c="frame" x="157" y="13" width="6" height="136"/>
+    <rect data-c="frame" x="35" y="78" width="250" height="5"/>
+    <rect data-c="frame #6a5a50 3" x="35" y="83" width="250" height="1.5"/>
+    <rect data-c="frame #6a5a50 3" x="35" y="13" width="250" height="2"/>
+  </g>
+  <rect data-c="frame #ffffff 4" x="19" y="150" width="282" height="9" rx="2"/>
+  <rect data-c="wall #3a2a20 7" opacity="0.6" x="21" y="159" width="278" height="3"/>
+
+  <!-- Things on the sill -->
+  <g>
+    <rect data-c="#8a6a58" x="38" y="134" width="18" height="16" rx="1.5"/>
+    <rect data-c="#fdf6ee" x="40.5" y="136.5" width="13" height="11"/>
+    <path data-c="#9ccc8a" d="M40.5,147.5 L45,141 L48,144 L50.5,141.5 L53.5,147.5 Z"/>
+    <path data-c="#6aa868" d="M273,135 C266,130 262,121 265,112 C271,118 274,127 273,135 Z"/>
+    <path data-c="#82c07c" d="M275,135 C280,128 288,124 294,126 C290,132 283,135 275,135 Z"/>
+    <path data-c="#7cc07a" d="M274,135 C272,126 274,116 280,109 C282,118 280,128 274,135 Z"/>
+    <path data-c="#5a9a5a" d="M273,136 C268,133 260,132 256,135 C262,138 268,138 273,136 Z"/>
+    <path data-c="#d4866a" d="M265,136 L283,136 L280.5,150 L267.5,150 Z"/>
+    <rect data-c="#e6987a" x="263" y="134" width="22" height="4" rx="1.5"/>
+  </g>
+
+  <!-- Curtains and the rod -->
+  <path id="curtainL" data-c="curtain #ffffff 4" data-c2="curtain #6a3a50 6"
+        d="M2,0 L66,0 C62,40 56,80 52,118 C50,140 56,170 62,204 C52,208 44,202 34,206 C24,210 14,204 2,208 Z"/>
+  <path data-c="curtain #6a3a50 8" opacity="0.6" data-clip="curtainL" d="M22,0 C20,60 18,140 20,210 L24,210 C22,140 24,60 26,0 Z"/>
+  <path data-c="curtain #6a3a50 8" opacity="0.6" data-clip="curtainL" d="M42,0 C40,60 36,140 40,210 L44,210 C40,140 44,60 46,0 Z"/>
+  <path data-c="curtain #ffffff 10" opacity="0.7" data-clip="curtainL" d="M9,0 C8,60 7,140 8,210 L11,210 C10,140 11,60 12,0 Z"/>
+  <g transform="matrix(-1 0 0 1 320 0)">
+    <path id="curtainR" data-c="curtain #ffffff 4" data-c2="curtain #6a3a50 6"
+          d="M2,0 L66,0 C62,40 56,80 52,118 C50,140 56,170 62,204 C52,208 44,202 34,206 C24,210 14,204 2,208 Z"/>
+    <path data-c="curtain #6a3a50 8" opacity="0.6" data-clip="curtainR" d="M22,0 C20,60 18,140 20,210 L24,210 C22,140 24,60 26,0 Z"/>
+    <path data-c="curtain #6a3a50 8" opacity="0.6" data-clip="curtainR" d="M42,0 C40,60 36,140 40,210 L44,210 C40,140 44,60 46,0 Z"/>
+    <path data-c="curtain #ffffff 10" opacity="0.7" data-clip="curtainR" d="M9,0 C8,60 7,140 8,210 L11,210 C10,140 11,60 12,0 Z"/>
+  </g>
+  <rect data-c="#a07c64" x="0" y="1" width="320" height="4" rx="2"/>
+</svg>

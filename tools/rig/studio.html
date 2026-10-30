@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rig Studio</title>
+<style>
+:root { --bg:#0f1220; --panel:#181d30; --card:#1f2540; --line:#2a3150; --text:#e6e9f5; --dim:#8b93b5; --accent:#4aa3ff;
+        --warn:#ffb340; --bad:#ff5c6c; --good:#5fd38d; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); display: flex; flex-direction: column;
+       font: 13px/1.5 system-ui, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px;
+         border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 15px; margin: 0 6px 0 0; }
+h3 { margin: 0 0 6px; font-size: 15px; }
+h4 { margin: 12px 0 4px; font-size: 13px; color: var(--dim); font-weight: 600; }
+p { margin: 4px 0 8px; }
+button, select, input { font: inherit; color: var(--text); background: #232a45; border: 1px solid var(--line);
+                        border-radius: 6px; padding: 4px 8px; }
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #06101f; font-weight: 600; }
+button:disabled { opacity: .45; cursor: default; }
+input[type=number] { width: 66px; }
+input[type=text] { width: 116px; }
+input[type=color] { width: 30px; height: 24px; padding: 1px; }
+a { color: var(--accent); }
+#status { color: var(--dim); margin-left: auto; }
+#status.dirty { color: var(--warn); }
+main { flex: 1; display: flex; min-height: 0; }
+main[hidden] { display: none; }
+#editor { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.toolbar { display: flex; gap: 6px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line);
+           flex-wrap: wrap; }
+#info { color: var(--dim); margin-left: auto; }
+#view { flex: 1; min-height: 0; overflow: auto; position: relative;
+        background: repeating-conic-gradient(#1b2036 0 25%, #151a2c 0 50%) 0 0 / 16px 16px; }
+#canvas { display: block; touch-action: none; }
+#empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--dim);
+         padding: 20px; text-align: center; }
+aside { width: 420px; border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0;
+        background: var(--panel); }
+#steps { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+#steps button { padding: 3px 8px; border-radius: 14px; color: var(--dim); background: none; }
+#steps button.on { color: #06101f; background: var(--accent); border-color: var(--accent); font-weight: 600; }
+#steps button .mark { margin-left: 3px; color: var(--good); }
+#steps button.on .mark { color: #06101f; }
+#steps button .mark.todo { color: var(--warn); }
+.pane { padding: 12px 14px; overflow: auto; flex: 1; }
+.next { margin-top: 12px; display: flex; justify-content: flex-end; gap: 6px; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
+ul.check { margin: 4px 0; padding-left: 18px; }
+ul.check li { margin: 2px 0; }
+.legend { list-style: none; padding: 0; margin: 6px 0; }
+.legend li { margin: 4px 0; display: flex; gap: 8px; }
+.legend .mk { flex: 0 0 18px; text-align: center; font-weight: 700; }
+.row { display: flex; gap: 6px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+.row > .k { width: 104px; color: var(--dim); }
+.hint { color: var(--dim); font-size: 12px; }
+.warn { color: var(--warn); }
+.ok { color: var(--good); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.pair { display: flex; gap: 10px; align-items: flex-start; }
+.pair img { width: 110px; border-radius: 6px; background: #0b0e1a; flex: 0 0 auto; }
+.drop { border: 1px dashed var(--line); border-radius: 8px; padding: 12px; text-align: center; color: var(--dim);
+        cursor: pointer; margin: 8px 0; }
+.drop.over, .slot.over { border-color: var(--accent); color: var(--text); }
+img.thumb { max-width: 100%; max-height: 200px; border-radius: 6px; background: #0b0e1a; display: block; margin-top: 6px; }
+.slot { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin: 8px 0; }
+.slot .title { display: flex; gap: 6px; align-items: baseline; }
+.slot .title b { font-size: 14px; }
+.slot .pics { display: flex; gap: 8px; margin-top: 6px; }
+.slot figure { margin: 0; width: 88px; text-align: center; font-size: 11px; color: var(--dim); }
+.slot figure img, .slot figure .none { width: 88px; height: 88px; object-fit: contain; border-radius: 6px;
+                                        background: #0b0e1a; display: block; }
+.slot figure .none { border: 1px dashed var(--line); display: flex; align-items: center; justify-content: center;
+                     cursor: pointer; color: var(--dim); }
+.ask { font-size: 12px; color: var(--dim); }
+.ask button { padding: 0 6px; font-size: 11px; margin-left: 4px; }
+#pv { position: relative; background: repeating-conic-gradient(#1b2036 0 25%, #151a2c 0 50%) 0 0 / 16px 16px;
+      border-radius: 6px; overflow: hidden; margin-top: 6px; }
+#pv canvas { width: 100%; image-rendering: pixelated; display: block; }
+#pvMsg { color: var(--dim); padding: 30px 10px; text-align: center; }
+pre { white-space: pre-wrap; font: 12px/1.4 ui-monospace, Consolas, monospace; background: #0b0e1a; padding: 8px;
+      border-radius: 6px; margin: 6px 0 0; max-height: 50vh; overflow: auto; }
+fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 10px; padding: 6px 10px 8px; }
+legend { color: var(--dim); padding: 0 4px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 3px 2px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td input[type=text] { width: 96px; }
+.regions label { margin-right: 4px; color: var(--dim); white-space: nowrap; }
+#spritePane { flex: 1; overflow: auto; padding: 14px 18px; }
+.sheet { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 10px 0; }
+.sheet canvas { image-rendering: pixelated; display: block; margin: 8px 0; max-width: 100%;
+                background: repeating-conic-gradient(#2a3150 0 25%, #1f2540 0 50%) 0 0 / 12px 12px; }
+.palette { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--dim); }
+#toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px;
+         display: none; max-width: 86vw; z-index: 9; border: 1px solid var(--bad); background: #3a1220; white-space: pre-wrap; }
+#toast.ok { border-color: var(--good); background: #12321f; }
+@media (max-width: 900px) {
+  main#rigMode { flex-direction: column; }
+  aside { width: auto; border-left: 0; border-top: 1px solid var(--line); height: 55vh; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Rig Studio</h1>
+  <select id="sets" title="art/ 아래 그림 세트"></select>
+  <button id="newSet">새 2D 캐릭터</button>
+  <span id="status"></span>
+  <button id="save" class="primary" title="rig.json에 저장 (Ctrl+S)">저장</button>
+</header>
+<main id="rigMode">
+  <section id="editor">
+    <div class="toolbar">
+      <button id="zoomOut" title="축소">−</button><button id="zoomFit">맞춤</button><button id="zoomIn" title="확대">+</button>
+      <select id="imgKind"><option value="cut">누끼</option><option value="source">원본</option></select>
+      <span id="info"></span>
+    </div>
+    <div id="view"><canvas id="canvas"></canvas><div id="empty">1단계에서 원본 그림을 올리면 여기에 나옵니다.</div></div>
+  </section>
+  <aside>
+    <nav id="steps"></nav>
+    <div class="pane" id="stepPane"></div>
+  </aside>
+</main>
+<main id="spriteMode" hidden><div id="spritePane"></div></main>
+<div id="toast"></div>
+<input type="file" id="filePick" hidden>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const S = {
+  sets: [], example: "heroine", slots: [], kind: null, name: null, rig: null, files: null, img: null, zoom: 0,
+  dirty: false, undo: [], drag: null, hover: null, step: 1, follow: null, showFollow: false, pv: {}, level: 0,
+  playing: false, playAt: 0, job: null,
+};
+const SHAPE = {
+  eyes: { label: "눈", color: "#3fd6ff", size: [56, 26] },
+  brows: { label: "눈썹", color: "#b48cff", size: [52, 22] },
+  mouth: { label: "입", color: "#ff7fb0", size: [40, 24] },
+};
+const STEPS = [
+  { id: 1, label: "그림" }, { id: 2, label: "누끼" }, { id: 3, label: "고개" }, { id: 4, label: "얼굴" },
+  { id: 5, label: "표정" }, { id: 6, label: "변환" }, { id: 7, label: "고급" },
+];
+
+// ---- server ----
+async function api(method, path, body) {
+  const opts = { method };
+  if (body !== undefined) opts.body = body instanceof Blob || typeof body === "string" ? body : JSON.stringify(body);
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+let toastTimer = 0;
+function toast(msg, ok) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = ok ? "ok" : "";
+  t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.style.display = "none"), ok ? 2500 : 7000);
+}
+const fileUrl = (set, path, info) => `/file?set=${set}&path=${encodeURIComponent(path)}&v=${info ? info.mtime : 0}`;
+const thumbUrl = (set, path, info, w, face) =>
+  `/thumb?set=${set}&path=${encodeURIComponent(path)}&w=${w}${face ? "&face=1" : ""}&v=${info ? info.mtime : 0}`;
+
+// ---- small DOM helpers ----
+let binds = [];
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (k === "class") e.className = v;
+    else if (v !== undefined && v !== null && v !== false) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids) if (k !== null && k !== undefined && k !== false) e.append(k);
+  return e;
+}
+function fill(node, ...kids) { node.replaceChildren(...kids.filter(k => k !== null && k !== undefined && k !== false)); }
+function syncInputs() {
+  for (const b of binds) if (document.activeElement !== b.el && b.el.isConnected) b.el.value = b.get();
+}
+function num(get, set, opt = {}) {
+  const input = el("input", { type: "number", step: opt.step || 1, min: opt.min, title: opt.title });
+  input.value = get();
+  input.addEventListener("focus", snapshot);
+  input.addEventListener("input", () => {
+    const v = opt.step && opt.step < 1 ? parseFloat(input.value) : parseInt(input.value, 10);
+    if (Number.isNaN(v)) return;
+    set(v);
+    changed(true);
+  });
+  binds.push({ el: input, get });
+  return input;
+}
+function row(label, ...kids) { return el("div", { class: "row" }, el("span", { class: "k" }, label), ...kids); }
+function sw(color) { return el("span", { class: "sw", style: `background:${color}` }); }
+function pickFile(accept, onFile) {
+  const input = $("filePick");
+  input.accept = accept;
+  input.value = "";
+  input.onchange = () => input.files[0] && onFile(input.files[0]);
+  input.click();
+}
+function dropTarget(node, accept, onFile) {
+  node.addEventListener("dragover", e => { e.preventDefault(); node.classList.add("over"); });
+  node.addEventListener("dragleave", () => node.classList.remove("over"));
+  node.addEventListener("drop", e => {
+    e.preventDefault(); node.classList.remove("over");
+    if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+  });
+  return node;
+}
+function dropZone(text, onFile) {
+  const d = el("div", { class: "drop" }, text);
+  d.onclick = () => pickFile(".png,.jpg,.jpeg,.webp", onFile);
+  return dropTarget(d, null, onFile);
+}
+function copyButton(text) {
+  return el("button", { title: "복사", onclick: async () => {
+    try { await navigator.clipboard.writeText(text); toast("복사했습니다.", true); } catch { toast(text, true); }
+  } }, "복사");
+}
+
+// ---- geometry: the head rig is in device px, the picture and the face in source px ----
+const P = () => S.rig.portrait;
+const T = () => S.rig.portrait.tilt;
+const scale = () => P().height / Math.max(1, P().crop[1] - P().crop[0]);
+const devToY = d => P().crop[0] + d / scale();
+const devToX = d => d / scale();
+const yToDev = y => Math.round((y - P().crop[0]) * scale());
+const xToDev = x => Math.round(x * scale());
+
+// Crop and height change the scale; the rig stays where it is on the picture
+function keepingPlace(change) {
+  const t = T(), p = P();
+  const at = { pivot: [devToX(t.pivot[0]), devToY(t.pivot[1])], neck: t.neck.map(devToY), hair: t.hair.map(devToY),
+               chest: devToY(p.chest) };
+  change();
+  t.pivot = [xToDev(at.pivot[0]), yToDev(at.pivot[1])];
+  t.neck = at.neck.map(yToDev);
+  t.hair = at.hair.map(yToDev);
+  p.chest = yToDev(at.chest);
+}
+
+// A new character starts with the heroine's proportions on its picture
+function startGeometry(w, h) {
+  const k = w / 1024, p = P(), t = T(), f = S.rig.face;
+  p.crop = [0, Math.min(h, Math.round(760 * k))];
+  t.pivot = [xToDev(w / 2), 182];
+  t.neck = [150, 182];
+  t.hair = [175, 205];
+  p.chest = 172;
+  const sc = v => Math.round(v * k);
+  f.window = [380, 225, 680, 445].map(sc);
+  f.shapes = { eyes: [[451, 308, 56, 26], [595, 294, 56, 26]].map(e => e.map(sc)),
+               brows: [[455, 262, 52, 22], [577, 247, 52, 22]].map(e => e.map(sc)), mouth: [[532, 386, 40, 24].map(sc)] };
+  changed(true);
+  fitZoom();
+}
+
+// ---- state ----
+function snapshot() {
+  S.undo.push(JSON.stringify(S.rig));
+  if (S.undo.length > 100) S.undo.shift();
+}
+function changed(final) {
+  S.dirty = true;
+  status();
+  syncInputs();
+  draw();
+  if (final) { S.pv = {}; schedulePreview(); scheduleRoom(); }
+}
+function status() {
+  const s = $("status");
+  if (S.kind !== "rig") { s.textContent = ""; $("save").hidden = true; return; }
+  $("save").hidden = false;
+  s.textContent = S.dirty ? "저장 안 됨" : "저장됨";
+  s.className = S.dirty ? "dirty" : "";
+}
+window.addEventListener("beforeunload", e => { if (S.dirty) e.preventDefault(); });
+
+async function loadSets(pick) {
+  const r = await api("GET", "/api/sets");
+  S.sets = r.sets; S.example = r.example; S.exampleSource = r.exampleSource;
+  const sel = $("sets");
+  const group = (label, kind) => el("optgroup", { label },
+    ...S.sets.filter(s => s.kind === kind).map(s => el("option", { value: s.name }, s.name)));
+  fill(sel, group("2D 캐릭터 (그림 + 리깅)", "rig"), group("도트 스프라이트", "sprites"));
+  const names = S.sets.map(s => s.name);
+  const want = pick || localStorage.getItem("rigStudioSet");
+  if (names.length) await loadSet(names.includes(want) ? want : names[0]);
+}
+async function loadSet(name) {
+  if (S.dirty && !confirm("저장하지 않은 리깅이 있습니다. 버리고 바꿀까요?")) { $("sets").value = S.name; return; }
+  const kind = S.sets.find(s => s.name === name).kind;
+  stopPlay();
+  S.kind = kind; S.name = name; S.dirty = false; S.undo = []; S.pv = {}; S.follow = null;
+  $("sets").value = name;
+  localStorage.setItem("rigStudioSet", name);
+  $("rigMode").hidden = kind !== "rig";
+  $("spriteMode").hidden = kind !== "sprites";
+  if (kind === "sprites") { status(); return showSprites(await api("GET", `/api/sprites?name=${name}`)); }
+  const st = await api("GET", `/api/set?name=${name}`);
+  S.rig = st.rig; S.files = st.files; S.img = null;
+  status();
+  loadImage(true);
+  const saved = parseInt(localStorage.getItem(`rigStudioStep:${name}`), 10);
+  showStep(saved || (S.files.source ? 3 : 1));
+}
+function adoptFiles(st) {  // after an upload or a step: new files, the rig being edited stays
+  S.files = st.files;
+  if (st.rig.source !== S.rig.source) S.rig.source = st.rig.source;
+  loadImage(false);
+  buildSteps();
+  showStep(S.step, true);
+}
+function loadImage(fit) {
+  const f = S.files;
+  const useCut = $("imgKind").value === "cut" && f.cut;
+  const src = useCut ? fileUrl(S.name, "base_cut.png", f.cut) : f.source ? fileUrl(S.name, S.rig.source, f.source) : null;
+  $("empty").style.display = src ? "none" : "flex";
+  if (!src) { S.img = null; draw(); return; }
+  const img = new Image();
+  img.onload = () => {
+    const first = !S.img;
+    S.img = img;
+    if (fit || first || !S.zoom) fitZoom();
+    if (P().crop[1] === 0) {
+      startGeometry(img.naturalWidth, img.naturalHeight);
+      toast("리깅을 기본 비율로 놓았습니다. 3·4단계에서 그림에 맞게 옮기세요.", true);
+    }
+    draw();
+  };
+  img.src = src;
+}
+
+// ---- steps ----
+function stepMark(id) {
+  const f = S.files;
+  if (id === 1) return f.source ? "✓" : "!";
+  if (id === 2) return f.cut ? "✓" : "!";
+  if (id === 5) {
+    const all = Object.values(S.rig.frames), have = all.filter(fr => (f.edits[fr.edit] || {}).src).length;
+    return `${have}/${all.length}`;
+  }
+  return "";
+}
+function buildSteps() {
+  fill($("steps"), ...STEPS.map(s => {
+    const mark = stepMark(s.id);
+    return el("button", { class: S.step === s.id ? "on" : "", onclick: () => showStep(s.id) },
+      s.id < 7 ? `${s.id} ${s.label}` : s.label,
+      mark ? el("span", { class: "mark" + (mark === "!" || /^(\d+)\/(?!\1$)/.test(mark) ? " todo" : "") }, mark) : null);
+  }));
+}
+function showStep(id, keepScroll) {
+  const pane = $("stepPane"), top = pane.scrollTop;
+  S.step = id;
+  localStorage.setItem(`rigStudioStep:${S.name}`, id);
+  binds = [];
+  if (id !== 3) stopPlay();
+  buildSteps();
+  const build = [null, step1, step2, step3, step4, step5, step6, stepAdvanced][id];
+  fill(pane, ...build());
+  pane.scrollTop = keepScroll ? top : 0;
+  draw();
+  paintJob();
+  if (id === 3) startPlay();
+  if (id === 7) scheduleRoom();
+}
+function nextButton(to, label) {
+  return el("div", { class: "next" }, el("button", { class: "primary", onclick: () => showStep(to) }, label));
+}
+
+function step1() {
+  const f = S.files, ex = S.example;
+  const exSrc = S.exampleSource ? el("img", { src: thumbUrl(ex, S.exampleSource, null, 220), alt: "" }) : null;
+  const prompt = "정면을 보는 캐릭터 한 명의 상반신, 머리 끝부터 허리까지, 초록 단색 배경(#00FF00), 세로 2:3, 눈 뜨고 입 다문 기본 표정";
+  let mine = null;
+  if (f.source) {
+    const [w, h] = f.source.size, warns = [];
+    if (w < 800) warns.push(`가로 ${w} px로 작습니다. 1000 px 이상이면 더 선명합니다.`);
+    if (w >= h) warns.push("가로로 긴 그림입니다. 세로 그림(상반신)이 맞습니다.");
+    mine = el("div", { class: "box" }, el("b", {}, "올린 그림"),
+      el("div", { class: "pair" }, el("img", { src: thumbUrl(S.name, S.rig.source, f.source, 220), alt: "" }),
+        el("div", {}, el("div", {}, `${S.rig.source}, ${w}×${h}`),
+          ...(warns.length ? warns.map(t => el("div", { class: "warn" }, t)) : [el("div", { class: "ok" }, "크기와 방향은 괜찮습니다.")]))));
+  }
+  return [
+    el("h3", {}, "1. 원본 그림"),
+    el("p", {}, "캐릭터 한 명을 그린 기본 그림 한 장이 필요합니다. 기기에서는 이 그림을 줄여서 보여 주고, 고개를 갸웃하는 자세도 이 그림을 구부려서 만듭니다."),
+    el("div", { class: "box" }, el("b", {}, "이런 그림을 넣으세요"),
+      el("div", { class: "pair" }, exSrc,
+        el("ul", { class: "check" },
+          el("li", {}, "정면을 보는 한 명, 세로 그림 (가로:세로 약 2:3)"),
+          el("li", {}, "머리 끝부터 가슴 아래까지 다 보이게 (허리나 전신까지 있어도 됨)"),
+          el("li", {}, "눈 뜨고 입 다문 기본 표정, 머리카락이 눈과 입을 가리지 않게"),
+          el("li", {}, "배경은 한 가지 색. 초록(#00FF00)이 가장 깨끗하게 지워집니다 (흰색, 단색, 체크무늬도 됨)"),
+          el("li", {}, "가로 1000 px 이상, PNG·JPG·WebP"))),
+      exSrc ? el("div", { class: "hint" }, `왼쪽은 예시 (${ex}). `) : null,
+      el("div", { class: "ask" }, "이미지 모델에 부탁할 때: ", el("i", {}, prompt), copyButton(prompt))),
+    dropZone(f.source ? "다른 그림으로 바꾸기 (끌어다 놓거나 누르기)" : "여기에 원본 그림을 끌어다 놓거나 누르세요", file => uploadImage("source", file)),
+    mine,
+    f.source ? nextButton(2, "다음: 누끼 →") : null,
+  ];
+}
+
+function step2() {
+  const f = S.files;
+  const cut = () => (S.rig.cutout = S.rig.cutout || {});
+  const tidy = () => { if (S.rig.cutout && !Object.keys(S.rig.cutout).length) delete S.rig.cutout; };
+  const bg = el("input", { type: "text", placeholder: "자동", title: "배경색 #rrggbb, 비우면 자동" });
+  bg.value = (S.rig.cutout || {}).bg || "";
+  bg.onchange = () => { snapshot(); if (bg.value) cut().bg = bg.value; else delete cut().bg; tidy(); changed(false); };
+  const bottom = el("input", { type: "checkbox" });
+  bottom.checked = !!(S.rig.cutout || {}).bottom;
+  bottom.onchange = () => { snapshot(); if (bottom.checked) cut().bottom = true; else delete cut().bottom; tidy(); changed(false); };
+  return [
+    el("h3", {}, "2. 누끼 (배경 지우기)"),
+    el("p", {}, "배경을 지워 캐릭터만 남깁니다. 몇 초 걸립니다. 배경이 초록·단색·체크무늬인지는 저절로 알아봅니다."),
+    f.source ? el("button", { class: "primary", onclick: () => run("cutout") }, f.cut ? "누끼 다시 만들기" : "누끼 만들기")
+             : el("p", { class: "warn" }, "1단계에서 원본 그림을 먼저 올리세요."),
+    jobBox(),
+    f.check ? el("div", { class: "box" }, el("b", {}, "결과 확인"),
+      el("p", { class: "hint" }, "체크무늬, 어두운 배경, 밝은 배경 위에 얹어 본 모습입니다. 머리카락 사이나 테두리에 배경색이 남았는지 보세요."),
+      el("a", { href: fileUrl(S.name, "base_check.png", f.check), target: "_blank" },
+        el("img", { class: "thumb", src: fileUrl(S.name, "base_check.png", f.check) }))) : null,
+    el("details", {}, el("summary", { class: "hint" }, "배경이 덜 지워졌을 때"),
+      row("배경색 직접", bg), el("label", { class: "hint" }, bottom, " 그림 아래쪽에 닿은 배경도 지우기"),
+      el("p", { class: "hint" }, "바꾼 뒤 '누끼 다시 만들기'를 누르세요.")),
+    f.cut ? nextButton(3, "다음: 고개 →") : null,
+  ];
+}
+
+function legend(items) {
+  return el("ul", { class: "legend" }, ...items.map(([mark, color, text]) =>
+    el("li", {}, el("span", { class: "mk", style: `color:${color}` }, mark), el("span", {}, text))));
+}
+function step3() {
+  const pvFollow = el("input", { type: "checkbox" });
+  pvFollow.checked = S.showFollow;
+  pvFollow.onchange = () => { S.showFollow = pvFollow.checked; draw(); if (!S.playing) preview(); };
+  const play = el("button", { id: "play", onclick: () => (S.playing ? stopPlay() : startPlay()) }, "■ 멈춤");
+  const lv = el("input", { type: "range", id: "level", min: -T().levels, max: T().levels, value: S.level, style: "flex:1" });
+  lv.oninput = () => { stopPlay(); S.level = parseInt(lv.value, 10); preview(); };
+  return [
+    el("h3", {}, "3. 고개 리깅"),
+    el("p", {}, "고개를 갸웃할 때 어디가 같이 움직일지 정합니다. 왼쪽 그림의 점과 선을 끌어서 맞추세요. 아래 미리보기가 기기 크기로 고개를 흔들어 보입니다."),
+    legend([
+      ["●", "#ff4fd8", "분홍 점 (피벗): 목 밑동. 고개가 이 점을 중심으로 돕니다."],
+      ["━", "#4aa3ff", "파란 선 두 개 (목): 위 선 위로는 머리가 통째로 움직이고, 아래 선 아래로는 몸이라 그대로입니다. 보통 턱 끝과 목 밑동."],
+      ["━", "#5fd38d", "초록 선 두 개 (머리카락): 어깨 아래로 늘어진 머리카락이 위 선까지는 머리를 따라오고 아래 선에서 멈춥니다."],
+      ["━", "#ffb340", "주황 선 (가슴): 숨쉴 때 이 선 위는 통째로 오르내리고 아래는 늘어납니다. 눈·입은 이 선보다 위여야 합니다."],
+      ["━", "#9aa3c7", "회색 선 두 개 (자르기): 쓸 범위, 머리 끝부터 가슴 아래까지. 빨간 점선은 기기 화면의 아래 끝입니다."],
+    ]),
+    el("div", { class: "row" }, play, lv, el("span", { id: "levelText", style: "width:62px" })),
+    el("label", { class: "hint" }, pvFollow, " 머리를 따라 움직이는 곳을 빨갛게"),
+    el("div", { id: "pv" }, el("canvas", { id: "pvCanvas" }), el("div", { id: "pvMsg" }, "미리보기를 그리는 중...")),
+    el("p", { class: "hint" }, "미리보기는 저장하지 않은 리깅으로 그립니다. 표정과 색 줄이기는 6단계 변환에서 들어갑니다."),
+    nextButton(4, "다음: 얼굴 →"),
+  ];
+}
+
+function step4() {
+  const f = S.rig.face;
+  const list = el("div");
+  const listShapes = () => fill(list, ...Object.entries(f.shapes).map(([k, items]) => el("div", { class: "row" },
+    el("span", { class: "k" }, sw(SHAPE[k].color), `${SHAPE[k].label} ${items.length}개`),
+    el("button", { onclick: () => {
+      snapshot();
+      const w = f.window;
+      items.push([Math.round((w[0] + w[2]) / 2), Math.round((w[1] + w[3]) / 2), ...SHAPE[k].size]);
+      listShapes(); changed(true);
+    } }, "+ 추가"),
+    items.length ? el("button", { onclick: () => { snapshot(); items.pop(); listShapes(); changed(true); } }, "− 마지막 빼기") : null)));
+  listShapes();
+  return [
+    el("h3", {}, "4. 얼굴 영역"),
+    el("p", {}, "5단계의 표정 그림에서 얼굴을 찾고, 눈·눈썹·입을 가져올 자리입니다. 그림 위에서 끌어서 맞추세요."),
+    legend([
+      ["▭", "#ffe14a", "노란 사각형 (얼굴 창): 눈썹 위부터 턱까지, 양 볼 끝까지. 표정 그림에서 얼굴을 찾을 범위입니다."],
+      ["◯", SHAPE.eyes.color, "하늘색 타원 두 개 (눈): 속눈썹까지 넉넉하게."],
+      ["◯", SHAPE.brows.color, "보라 타원 두 개 (눈썹)."],
+      ["◯", SHAPE.mouth.color, "분홍 타원 (입): 크게 벌린 입까지 들어가게."],
+    ]),
+    el("p", { class: "hint" }, "가운데 동그라미를 끌면 옮겨지고, 네모 손잡이를 끌면 크기가 바뀝니다. 마우스 휠 + Ctrl로 확대하면 편합니다."),
+    list,
+    nextButton(5, "다음: 표정 →"),
+  ];
+}
+
+function step5() {
+  const f = S.files, frames = S.rig.frames, slots = Object.fromEntries(S.slots.map(s => [s.name, s]));
+  const all = Object.entries(frames), have = all.filter(([, fr]) => (f.edits[fr.edit] || {}).src).length;
+  const showExample = S.name !== S.example && S.sets.some(s => s.name === S.example);
+  const cards = all.map(([name, fr]) => {
+    const s = slots[name] || { label: name, look: `편집본 ${fr.edit}.png, 바뀌는 곳: ${fr.regions}`, ask: "" };
+    const info = f.edits[fr.edit] || {};
+    const ask = s.ask ? `이 그림에서 다른 곳은 그대로 두고 ${s.ask} 바꿔줘` : "";
+    const up = file => uploadImage("edit", file, fr.edit);
+    const card = el("div", { class: "slot" },
+      el("div", { class: "title" }, el("b", {}, s.label), el("span", { class: "hint" }, name),
+        info.src ? el("span", { class: "ok" }, "올림") : el("span", { class: "warn" }, "아직")),
+      el("div", {}, s.look),
+      ask ? el("div", { class: "ask" }, "부탁: ", el("i", {}, ask), copyButton(ask)) : null,
+      el("div", { class: "pics" },
+        showExample ? el("figure", {}, el("img", { src: thumbUrl(S.example, `${fr.edit}.png`, null, 176, true), alt: "",
+                                                   onerror: e => (e.target.style.visibility = "hidden") }), "예시") : null,
+        el("figure", {}, info.src
+          ? el("img", { src: thumbUrl(S.name, `src/${fr.edit}.png`, info.src, 176), title: "누르면 바꾸기",
+                        onclick: () => pickFile(".png,.jpg,.jpeg,.webp", up) })
+          : el("div", { class: "none", onclick: () => pickFile(".png,.jpg,.jpeg,.webp", up) }, "올리기"), "올린 그림"),
+        el("figure", {}, info.out
+          ? el("img", { src: thumbUrl(S.name, `${fr.edit}.png`, info.out, 176, true) })
+          : el("div", { class: "none", style: "cursor:default" }, "변환 후"), "맞춘 얼굴")));
+    return dropTarget(card, null, up);
+  });
+  return [
+    el("h3", {}, `5. 표정 (${have}/${all.length})`),
+    el("p", {}, "기본 그림을 이미지 모델로 고친 그림을 표정마다 한 장씩 올립니다. 얼굴만 바뀌고 나머지는 그대로인 그림이면 됩니다. 크기, 위치, 배경은 조금 달라도 괜찮습니다: 변환할 때 얼굴을 찾아 맞추고 4단계의 눈·눈썹·입 자리만 가져옵니다."),
+    el("p", { class: "hint" }, "이미지 모델에는 1단계의 원본 그림을 첨부하고 카드의 '부탁' 문장을 쓰면 됩니다. 각 카드에 그림을 끌어다 놓아도 됩니다."),
+    ...cards,
+    nextButton(6, "다음: 변환 →"),
+  ];
+}
+
+function step6() {
+  const f = S.files, all = Object.values(S.rig.frames);
+  const missing = all.filter(fr => !(f.edits[fr.edit] || {}).src).map(fr => fr.edit);
+  const ready = f.source && missing.length === 0;
+  const isHeroine = S.name === S.example;
+  return [
+    el("h3", {}, "6. 변환"),
+    el("p", {}, "올린 그림과 리깅으로 기기용 표를 만듭니다. 바뀐 단계만 다시 합니다: 리깅만 바꾸면 약 20초, 표정을 처음 맞출 때는 몇 분 걸립니다."),
+    el("ul", { class: "check" },
+      el("li", { class: f.source ? "ok" : "warn" }, f.source ? "원본 그림 있음" : "원본 그림 없음 (1단계)"),
+      el("li", { class: f.cut ? "ok" : "hint" }, f.cut ? "누끼 있음" : "누끼는 변환할 때 만들어집니다"),
+      el("li", { class: missing.length ? "warn" : "ok" },
+        missing.length ? `표정 그림 ${missing.length}개가 아직 없습니다: ${missing.join(", ")} (5단계)` : `표정 ${all.length}개 모두 있음`)),
+    el("div", { class: "row" },
+      el("button", { class: "primary", disabled: !ready, onclick: () => run("convert") }, "변환"),
+      el("button", { disabled: !ready, onclick: () => confirm("모든 단계를 처음부터 다시 합니다 (약 5분). 할까요?") && run("force") }, "전부 다시")),
+    jobBox(),
+    el("div", { class: "box" }, el("b", {}, "기기에 넣기"),
+      isHeroine
+        ? el("p", { class: "hint" }, "시뮬레이터는 저절로 다시 빌드됩니다. 기기는 빌드해서 올리세요. CYD는 애니가 기본에서 빠져 있어 cyd2usb_anime 환경으로 올립니다.")
+        : el("p", { class: "hint" }, "표는 만들어지지만, 이 캐릭터를 기기에 보이려면 펌웨어에 이 캐릭터의 코드가 따로 필요합니다 (지금은 히로인만).")),
+  ];
+}
+
+function stepAdvanced() {
+  const p = P(), t = T(), f = S.rig.face, frames = S.rig.frames;
+  const shapeRows = [];
+  for (const [k, list] of Object.entries(f.shapes)) {
+    list.forEach((e, i) => shapeRows.push(row(el("span", {}, sw(SHAPE[k].color), `${SHAPE[k].label} ${i + 1}`),
+      num(() => e[0], v => (e[0] = v), { title: "가운데 x" }), num(() => e[1], v => (e[1] = v), { title: "가운데 y" }),
+      num(() => e[2], v => (e[2] = v), { title: "가로 반지름", min: 2 }), num(() => e[3], v => (e[3] = v), { title: "세로 반지름", min: 2 }))));
+  }
+  const rename = (oldName, newName) => {
+    const out = {};
+    for (const [k, v] of Object.entries(frames)) out[k === oldName ? newName : k] = v;
+    S.rig.frames = out;
+  };
+  const frameRows = Object.entries(frames).map(([name, fr]) => {
+    const nameIn = el("input", { type: "text", value: name, title: "펌웨어 이름 (k…Frame이름)" });
+    nameIn.onchange = () => { snapshot(); rename(name, nameIn.value.trim()); changed(false); showStep(7, true); };
+    const editIn = el("input", { type: "text", value: fr.edit, title: "표정 그림 파일 src/<이름>.png" });
+    editIn.onchange = () => { snapshot(); fr.edit = editIn.value.trim(); changed(false); };
+    const regions = el("span", { class: "regions" }, ...Object.keys(SHAPE).map(k => {
+      const c = el("input", { type: "checkbox" });
+      c.checked = fr.regions.split(" ").includes(k);
+      c.onchange = () => {
+        snapshot();
+        const set = new Set(fr.regions.split(" ").filter(Boolean));
+        c.checked ? set.add(k) : set.delete(k);
+        fr.regions = Object.keys(SHAPE).filter(x => set.has(x)).join(" ");
+        changed(false);
+      };
+      return el("label", {}, c, SHAPE[k].label);
+    }));
+    const same = el("input", { type: "checkbox", title: "눈 모양은 그대로, 눈동자만 움직이는 그림 (곁눈질)" });
+    same.checked = !!fr.sameEyes;
+    same.onchange = () => { snapshot(); if (same.checked) fr.sameEyes = true; else delete fr.sameEyes; changed(false); };
+    return el("tr", {}, el("td", {}, nameIn), el("td", {}, editIn), el("td", {}, regions, el("label", { class: "regions" }, same, "곁눈질")),
+      el("td", {}, el("button", { title: "표정 빼기", onclick: () => { snapshot(); delete frames[name]; changed(false); showStep(7, true); } }, "×")));
+  });
+  const b = S.rig.backdrop;
+  return [
+    el("h3", {}, "고급 설정"),
+    el("p", { class: "hint" }, "보통은 그림 위에서 끄는 것으로 충분합니다. 같은 값을 숫자로 고칠 때만 쓰세요."),
+    el("fieldset", {}, el("legend", {}, "자르기·크기"),
+      row("자르기 행", num(() => p.crop[0], v => keepingPlace(() => (p.crop[0] = v)), { title: "원본 px, 머리 위" }),
+          num(() => p.crop[1], v => keepingPlace(() => (p.crop[1] = v)), { title: "원본 px, 가슴 아래" })),
+      row("기기 높이", num(() => p.height, v => keepingPlace(() => (p.height = v)), { min: 16 }), el("span", { class: "hint" }, "자른 행이 기기에서 몇 px")),
+      row("화면 행", num(() => p.shown, v => (p.shown = v))), row("아래 여유", num(() => p.below, v => (p.below = v)))),
+    el("fieldset", {}, el("legend", {}, "고개 (기기 px)"),
+      row("피벗 x, y", num(() => t.pivot[0], v => (t.pivot[0] = v)), num(() => t.pivot[1], v => (t.pivot[1] = v))),
+      row("목 위, 아래", num(() => t.neck[0], v => (t.neck[0] = v)), num(() => t.neck[1], v => (t.neck[1] = v))),
+      row("머리카락", num(() => t.hair[0], v => (t.hair[0] = v)), num(() => t.hair[1], v => (t.hair[1] = v))),
+      row("가슴 행", num(() => p.chest, v => (p.chest = v))),
+      row("기울임", num(() => t.levels, v => (t.levels = Math.max(0, v)), { min: 0, title: "한쪽으로 몇 단계 (한 단계 약 46 KB)" }),
+          num(() => t.step, v => (t.step = v), { step: 0.005, min: 0.001, title: "단계 사이 각도 (rad)" }), el("span", { class: "hint" }, "단계, rad")),
+      row("메시 간격", num(() => t.grid, v => (t.grid = Math.max(2, v)), { min: 2 }))),
+    el("fieldset", {}, el("legend", {}, "얼굴 (원본 px)"),
+      row("얼굴 창", ...[0, 1, 2, 3].map(i => num(() => f.window[i], v => (f.window[i] = v), { title: ["왼쪽", "위", "오른쪽", "아래"][i] }))),
+      ...shapeRows),
+    el("fieldset", {}, el("legend", {}, "표정 목록 (순서 = 펌웨어 프레임 번호)"),
+      el("table", {}, el("tbody", {}, ...frameRows)),
+      el("button", { onclick: () => {
+        snapshot();
+        let n = 1;
+        while (frames[`New${n}`]) n++;
+        frames[`New${n}`] = { edit: `new_${n}`, regions: "eyes" };
+        changed(false); showStep(7, true);
+      } }, "+ 표정"),
+      el("p", { class: "hint" }, "펌웨어가 쓰는 이름을 바꾸거나 빼면 펌웨어도 고쳐야 합니다.")),
+    b ? el("fieldset", {}, el("legend", {}, `방 배경 (${b.svg}, 시간대별 색)`),
+      ...b.periods.map((per, i) => el("div", { class: "box" }, el("b", {}, per.name),
+        el("img", { class: "thumb", id: `room${i}`, alt: "" }),
+        row("구름 / 별·달", num(() => per.daylight, v => (per.daylight = v), { step: 0.1, min: 0 }),
+            num(() => per.night, v => (per.night = v), { step: 0.1, min: 0 })),
+        el("div", { class: "row" }, ...Object.keys(per.colors).map(k => {
+          const c = el("input", { type: "color", value: per.colors[k], title: k });
+          c.addEventListener("focus", snapshot);
+          c.oninput = () => { per.colors[k] = c.value; changed(false); scheduleRoom(); };
+          return el("label", { class: "regions" }, c, k);
+        }))))) : null,
+  ];
+}
+
+// ---- uploads and steps on the server ----
+async function uploadImage(kind, file, edit) {
+  try {
+    const q = `set=${S.name}&kind=${kind}&filename=${encodeURIComponent(file.name)}` + (edit ? `&edit=${edit}` : "");
+    const st = await api("POST", `/api/upload?${q}`, file);
+    adoptFiles(st);
+    toast(kind === "source" ? "원본을 올렸습니다. 다음은 2단계 누끼입니다." : `${edit} 그림을 올렸습니다.`, true);
+  } catch (e) { toast(e.message); }
+}
+async function save(quiet) {
+  try {
+    const r = await api("POST", `/api/save?set=${S.name}`, S.rig);
+    S.dirty = false;
+    status();
+    adoptFiles(r);
+    if (!quiet) toast(r.changed ? "rig.json에 저장했습니다." : "바뀐 것이 없습니다.", true);
+    return true;
+  } catch (e) { toast(e.message); return false; }
+}
+async function run(what) {
+  if (S.dirty && !(await save(true))) return;
+  try {
+    S.job = await api("POST", `/api/run?set=${S.name}&what=${what}`);
+    showStep(S.step, true);
+    pollJob();
+  } catch (e) { toast(e.message); }
+}
+function jobBox() {
+  return el("div", { id: "jobBox" });
+}
+function paintJob() {
+  const box = $("jobBox"), j = S.job;
+  if (!box || !j || !j.title) return;
+  const state = j.running ? "도는 중..." : j.code === 0 ? "끝" : `실패 (코드 ${j.code})`;
+  fill(box, el("div", { class: j.running ? "warn" : j.code === 0 ? "ok" : "warn" }, `${j.title}: ${state}`),
+    el("pre", {}, j.lines.join("\n")));
+  const pre = box.querySelector("pre");
+  pre.scrollTop = pre.scrollHeight;
+}
+let jobTimer = 0;
+async function pollJob() {
+  clearTimeout(jobTimer);
+  const j = await api("GET", "/api/job").catch(() => null);
+  if (!j) return;
+  const was = S.job && S.job.running;
+  S.job = j;
+  paintJob();
+  if (j.running) jobTimer = setTimeout(pollJob, 700);
+  else if (was && S.kind === "rig") {
+    const st = await api("GET", `/api/set?name=${S.name}`);
+    S.pv = {};
+    adoptFiles(st);
+    if (j.code === 0) toast(`${j.title} 끝`, true);
+  }
+}
+
+// ---- editor ----
+const canvas = $("canvas"), ctx = canvas.getContext("2d");
+function fitZoom() {  // the cropped rows, where all of the rig is
+  if (!S.img) return;
+  const v = $("view"), p = P();
+  const rows = p.crop[1] > p.crop[0] ? p.crop[1] - p.crop[0] : S.img.naturalHeight;
+  S.zoom = Math.min(2, (v.clientWidth - 4) / S.img.naturalWidth, (v.clientHeight - 4) / (rows * 1.04));
+  draw();
+  v.scrollTop = Math.max(0, (p.crop[0] - rows * 0.02) * S.zoom);
+}
+function setZoom(z) { S.zoom = Math.max(0.1, Math.min(2, z)); draw(); }
+
+// lx: where the label sits, as a share of the picture's width (rows close together get apart)
+function hline(id, y, label, color, set, opt = {}) { return { id, kind: "line", y, label, color, set, lx: 0, ...opt }; }
+function point(id, x, y, label, color, set, opt = {}) { return { id, kind: "point", x, y, label, color, set, ...opt }; }
+const showsRig = () => S.step === 3 || S.step === 7;
+const showsFace = () => S.step === 4 || S.step === 7;
+
+function handles() {
+  const H = [], p = P(), t = T(), f = S.rig.face;
+  if (showsRig()) {
+    H.push(hline("crop0", p.crop[0], "자르기 위", "#9aa3c7", y => keepingPlace(() => (p.crop[0] = Math.max(0, Math.round(y))))));
+    H.push(hline("crop1", p.crop[1], "자르기 아래", "#9aa3c7", y => keepingPlace(() => (p.crop[1] = Math.round(y)))));
+    H.push(hline("shown", devToY(p.shown), "화면 아래", "#ff5c6c", null, { dash: [6, 4] }));
+    H.push(hline("neck0", devToY(t.neck[0]), "목 위", "#4aa3ff", y => (t.neck[0] = yToDev(y))));
+    H.push(hline("neck1", devToY(t.neck[1]), "목 아래", "#4aa3ff", y => (t.neck[1] = yToDev(y))));
+    H.push(hline("hair0", devToY(t.hair[0]), "머리카락 위", "#5fd38d", y => (t.hair[0] = yToDev(y)), { lx: 0.3 }));
+    H.push(hline("hair1", devToY(t.hair[1]), "머리카락 아래", "#5fd38d", y => (t.hair[1] = yToDev(y)), { lx: 0.3 }));
+    H.push(hline("chest", devToY(p.chest), "가슴", "#ffb340", y => (p.chest = yToDev(y)), { lx: 0.62 }));
+    H.push(point("pivot", devToX(t.pivot[0]), devToY(t.pivot[1]), "피벗", "#ff4fd8",
+                 (x, y) => (t.pivot = [xToDev(x), yToDev(y)]), { big: true }));
+  }
+  if (showsFace()) {
+    const w = f.window, r = Math.round;
+    H.push(point("win0", w[0], w[1], "", "#ffe14a", (x, y) => { w[0] = r(x); w[1] = r(y); }));
+    H.push(point("win1", w[2], w[3], "", "#ffe14a", (x, y) => { w[2] = r(x); w[3] = r(y); }));
+    H.push(point("win", (w[0] + w[2]) / 2, (w[1] + w[3]) / 2, "", "#ffe14a", (x, y) => {
+      const dx = r(x - (w[0] + w[2]) / 2), dy = r(y - (w[1] + w[3]) / 2);
+      w[0] += dx; w[2] += dx; w[1] += dy; w[3] += dy;
+    }, { cross: true }));
+    for (const [k, list] of Object.entries(f.shapes)) {
+      const c = SHAPE[k].color;
+      list.forEach((e, i) => {
+        H.push(point(`${k}${i}`, e[0], e[1], "", c, (x, y) => { e[0] = r(x); e[1] = r(y); }, { cross: true }));
+        H.push(point(`${k}${i}rx`, e[0] + e[2], e[1], "", c, x => (e[2] = Math.max(2, r(Math.abs(x - e[0]))))));
+        H.push(point(`${k}${i}ry`, e[0], e[1] + e[3], "", c, (x, y) => (e[3] = Math.max(2, r(Math.abs(y - e[1]))))));
+      });
+    }
+  }
+  return H;
+}
+
+function draw() {
+  const img = S.img;
+  if (!img || !S.rig || S.kind !== "rig") { canvas.width = canvas.height = 0; return; }
+  const z = S.zoom, dpr = window.devicePixelRatio || 1;
+  const W = img.naturalWidth, Hh = img.naturalHeight;
+  canvas.style.width = `${W * z}px`;
+  canvas.style.height = `${Hh * z}px`;
+  canvas.width = Math.round(W * z * dpr);
+  canvas.height = Math.round(Hh * z * dpr);
+  ctx.setTransform(dpr * z, 0, 0, dpr * z, 0, 0);
+  ctx.imageSmoothingEnabled = z < 1;
+  ctx.drawImage(img, 0, 0);
+  const p = P(), px = 1 / z;  // one screen px in picture px
+  if (showsRig()) {  // outside the crop: dimmed
+    ctx.fillStyle = "rgba(8,10,20,.55)";
+    ctx.fillRect(0, 0, W, p.crop[0]);
+    ctx.fillRect(0, p.crop[1], W, Hh - p.crop[1]);
+  }
+  if (S.step === 3 && S.showFollow && S.follow) {
+    const s = scale();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(S.follow, 0, p.crop[0], S.follow.naturalWidth / s, S.follow.naturalHeight / s);
+  }
+  if (showsFace()) {
+    const f = S.rig.face, w = f.window;
+    ctx.strokeStyle = "#ffe14a"; ctx.lineWidth = 1.5 * px; ctx.setLineDash([5 * px, 4 * px]);
+    ctx.strokeRect(w[0], w[1], w[2] - w[0], w[3] - w[1]);
+    ctx.setLineDash([]);
+    label(w[0], w[1] - 4 * px, "얼굴 창", "#ffe14a", px);
+    for (const [k, list] of Object.entries(f.shapes)) {
+      ctx.strokeStyle = SHAPE[k].color; ctx.lineWidth = 1.5 * px;
+      for (const e of list) { ctx.beginPath(); ctx.ellipse(e[0], e[1], e[2], e[3], 0, 0, Math.PI * 2); ctx.stroke(); }
+    }
+  }
+  const hotId = S.drag ? S.drag.id : S.hover;
+  for (const h of handles()) {
+    const hot = h.id === hotId;
+    if (h.kind === "line") {
+      ctx.strokeStyle = h.color; ctx.lineWidth = (hot ? 3 : 1.5) * px; ctx.setLineDash((h.dash || []).map(d => d * px));
+      ctx.beginPath(); ctx.moveTo(0, h.y); ctx.lineTo(W, h.y); ctx.stroke();
+      ctx.setLineDash([]);
+      label(h.lx * W + 4 * px, Math.max(h.y - 3 * px, 12 * px), h.label, h.color, px);
+    } else {
+      const r = (h.big ? 7 : 4.5) * px * (hot ? 1.4 : 1);
+      ctx.fillStyle = h.color; ctx.strokeStyle = "#000"; ctx.lineWidth = px;
+      if (h.cross) { ctx.beginPath(); ctx.arc(h.x, h.y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+      else { ctx.fillRect(h.x - r, h.y - r, 2 * r, 2 * r); ctx.strokeRect(h.x - r, h.y - r, 2 * r, 2 * r); }
+      if (h.big) {
+        ctx.strokeStyle = h.color; ctx.lineWidth = 1.5 * px;
+        ctx.beginPath(); ctx.moveTo(h.x - 3 * r, h.y); ctx.lineTo(h.x + 3 * r, h.y);
+        ctx.moveTo(h.x, h.y - 3 * r); ctx.lineTo(h.x, h.y + 3 * r); ctx.stroke();
+      }
+      if (h.label) label(h.x + 2 * r, h.y - 2 * r, h.label, h.color, px);
+    }
+  }
+  const s = scale();
+  $("info").textContent = `원본 ${W}×${Hh} · 기기 ${Math.round(W * s)}×${p.height} · ${Math.round(z * 100)}%`;
+}
+function label(x, y, text, color, px) {
+  ctx.font = `${12 * px}px system-ui, "Malgun Gothic", sans-serif`;
+  const w = ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(10,12,24,.75)";
+  ctx.fillRect(x - 2 * px, y - 11 * px, w + 4 * px, 14 * px);
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+function toPicture(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / S.zoom, y: (e.clientY - r.top) / S.zoom };
+}
+function hit(pt) {  // a point under the cursor before any row line (the pivot sits on one)
+  const reach = 9 / S.zoom;
+  const nearest = kind => {
+    let best = null, bestD = reach;
+    for (const h of handles()) {
+      if (!h.set || h.kind !== kind) continue;
+      const d = kind === "point" ? Math.hypot(h.x - pt.x, h.y - pt.y) : Math.abs(h.y - pt.y);
+      if (d < bestD) { best = h; bestD = d; }
+    }
+    return best;
+  };
+  return nearest("point") || nearest("line");
+}
+canvas.addEventListener("pointerdown", e => {
+  if (!S.img) return;
+  const pt = toPicture(e), h = hit(pt);
+  if (!h) return;
+  snapshot();
+  // The handle's setter writes into the rig itself, so it stays valid while the list is redrawn
+  S.drag = { id: h.id, set: h.set, dx: h.kind === "point" ? h.x - pt.x : 0, dy: h.y - pt.y };
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", e => {
+  if (!S.img) return;
+  const pt = toPicture(e);
+  if (S.drag) {
+    S.drag.set(pt.x + S.drag.dx, pt.y + S.drag.dy);
+    changed(false);
+    return;
+  }
+  const h = hit(pt);
+  const id = h ? h.id : null;
+  canvas.style.cursor = h ? (h.kind === "line" ? "ns-resize" : "move") : "default";
+  if (id !== S.hover) { S.hover = id; draw(); }
+});
+canvas.addEventListener("pointerup", () => {
+  if (!S.drag) return;
+  S.drag = null;
+  changed(true);
+});
+$("view").addEventListener("wheel", e => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  setZoom(S.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+}, { passive: false });
+$("zoomIn").onclick = () => setZoom(S.zoom * 1.25);
+$("zoomOut").onclick = () => setZoom(S.zoom / 1.25);
+$("zoomFit").onclick = fitZoom;
+$("imgKind").onchange = () => loadImage(false);
+window.addEventListener("resize", () => draw());
+
+// ---- tilt preview (step 3) ----
+let pvTimer = 0, playTimer = 0;
+function schedulePreview() {
+  clearTimeout(pvTimer);
+  if (S.step === 3 && !S.playing) pvTimer = setTimeout(preview, 300);
+}
+function pvKey(level) { return JSON.stringify([S.rig.portrait, S.files.cut && S.files.cut.mtime, level]); }
+function fetchPreview(level) {
+  const key = pvKey(level);
+  if (!S.pv[key]) {
+    S.pv[key] = api("POST", `/api/preview?set=${S.name}`, { rig: S.rig, level }).then(r => {
+      const pose = new Image(), follow = new Image();
+      pose.src = r.pose; follow.src = r.follow;
+      return Promise.all([pose.decode(), follow.decode()]).then(() => ({ ...r, poseImg: pose, followImg: follow }));
+    });
+    S.pv[key].catch(() => delete S.pv[key]);
+  }
+  return S.pv[key];
+}
+function previewMessage(text) {
+  const m = $("pvMsg");
+  if (m) { m.textContent = text; m.style.display = "block"; }
+}
+async function preview() {
+  if (S.step !== 3) return;
+  if (!S.files.cut) return previewMessage("누끼가 아직 없습니다. 2단계에서 먼저 만드세요.");
+  try { paintPreview(await fetchPreview(S.level)); } catch (e) { previewMessage(e.message); }
+}
+function startPlay() {
+  if (!S.files || !S.files.cut) { previewMessage("누끼가 아직 없습니다. 2단계에서 먼저 만드세요."); return; }
+  S.playing = true;
+  if ($("play")) $("play").textContent = "■ 멈춤";
+  const tick = async () => {
+    if (!S.playing || S.step !== 3) return;
+    const L = T().levels, seq = [];
+    for (let i = -L; i <= L; i++) seq.push(i);
+    for (let i = L - 1; i > -L; i--) seq.push(i);
+    const level = seq[S.playAt++ % seq.length];
+    try {
+      const r = await fetchPreview(level);
+      if (S.playing && S.step === 3) { S.level = level; paintPreview(r); }
+    } catch (e) { previewMessage(e.message); stopPlay(); return; }
+    playTimer = setTimeout(tick, 170);
+  };
+  tick();
+}
+function stopPlay() {
+  S.playing = false;
+  clearTimeout(playTimer);
+  if ($("play")) $("play").textContent = "▶ 재생";
+}
+function paintPreview(r) {
+  const c = $("pvCanvas");
+  if (!c) return;
+  const g = c.getContext("2d"), k = 3, p = P();
+  const w = r.poseImg.naturalWidth, h = r.poseImg.naturalHeight;
+  c.width = w * k; c.height = h * k;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(r.poseImg, 0, 0, w * k, h * k);
+  if (S.showFollow) { g.imageSmoothingEnabled = true; g.drawImage(r.followImg, 0, 0, w, h, 0, 0, w * k, h * k); }
+  const line = (y, color, dash) => {
+    g.strokeStyle = color; g.lineWidth = 2; g.setLineDash(dash);
+    g.beginPath(); g.moveTo(0, y * k); g.lineTo(w * k, y * k); g.stroke();
+  };
+  line(p.shown, "#ff5c6c", [10, 6]);
+  line(p.chest, "#ffb340", [4, 4]);
+  $("pvMsg").style.display = "none";
+  if ($("level")) $("level").value = r.level;
+  if ($("levelText")) $("levelText").textContent = `${r.level > 0 ? "+" : ""}${r.level} 단계`;
+  S.follow = r.followImg;
+  if (S.showFollow) draw();
+}
+
+// ---- room colors (advanced) ----
+let roomTimer = 0;
+function scheduleRoom() {
+  clearTimeout(roomTimer);
+  roomTimer = setTimeout(async () => {
+    if (S.kind !== "rig" || !S.rig.backdrop || S.step !== 7) return;
+    try {
+      const r = await api("POST", `/api/room?set=${S.name}`, S.rig);
+      r.periods.forEach((url, i) => { const img = $(`room${i}`); if (img) img.src = url; });
+    } catch (e) { toast(e.message); }
+  }, 300);
+}
+
+// ---- sprite sets ----
+const MOVES = { flame: "불꽃 (불티가 튀고 꼬리가 깜빡임)", leaf: "잎 (크고 느리게 흩날림)", bubble: "물방울 (동그란 거품)" };
+function sheetCard(name, st, sheet, about, strip) {
+  const pal = st.manifest.palettes[sheet.palette] || {};
+  const [fw, fh] = sheet.frame, cols = Math.max(...sheet.frames.map(r => r.length)), rows = sheet.frames.length;
+  const info = st.files[sheet.png];
+  const c = el("canvas");
+  const img = new Image();
+  img.onload = () => {
+    const k = Math.max(2, Math.min(8, Math.floor(520 / (cols * fw))));
+    c.width = cols * fw * k; c.height = rows * fh * k;
+    const g = c.getContext("2d");
+    g.imageSmoothingEnabled = false;
+    g.drawImage(img, 0, 0, c.width, c.height);
+    g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1;
+    g.font = "10px system-ui, sans-serif";
+    sheet.frames.forEach((r, y) => r.forEach((fname, x) => {
+      g.strokeRect(x * fw * k + 0.5, y * fh * k + 0.5, fw * k - 1, fh * k - 1);
+      if (!fname) return;
+      const text = strip ? fname.slice(strip.length) : fname;
+      g.fillStyle = "rgba(10,12,24,.7)";
+      g.fillRect(x * fw * k + 1, y * fh * k + 1, g.measureText(text).width + 4, 12);
+      g.fillStyle = "#e6e9f5";
+      g.fillText(text, x * fw * k + 3, y * fh * k + 10);
+    }));
+  };
+  img.src = fileUrl(name, sheet.png, info);
+  const replace = file => uploadSheet(name, sheet.png, file);
+  return dropTarget(el("div", { class: "sheet" },
+    el("div", { class: "row" }, el("b", {}, sheet.png),
+      el("span", { class: "hint" }, `칸 ${fw}×${fh} px, ${cols}×${rows}칸`),
+      el("span", { style: "margin-left:auto" },
+        el("a", { href: fileUrl(name, sheet.png, info), download: sheet.png }, el("button", {}, "내려받기")), " ",
+        el("button", { class: "primary", onclick: () => pickFile(".png", replace) }, "바꾸기"))),
+    about ? el("div", {}, about) : null,
+    c,
+    el("div", { class: "palette" }, el("span", {}, `팔레트 ${sheet.palette}:`), ...Object.entries(pal).map(([letter, spec]) => {
+      const [color, ...what] = spec.split(" ");
+      return el("span", { title: `${color} (글자 ${letter})` }, sw(color), what.join(" "));
+    }), el("a", { href: gplUrl(sheet.palette, pal), download: `${sheet.palette}.gpl`,
+                  title: "Aseprite, GIMP, Krita 등에서 불러오는 팔레트 파일" }, "팔레트 내려받기 (.gpl)"))), null, replace);
+}
+
+// The palette as a GIMP palette file (.gpl), which pixel editors load
+function gplUrl(name, pal) {
+  const lines = ["GIMP Palette", `Name: ${name}`, "#"];
+  for (const spec of Object.values(pal)) {
+    const [color, ...what] = spec.split(" ");
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16));
+    lines.push(`${String(r).padStart(3)} ${String(g).padStart(3)} ${String(b).padStart(3)}\t${what.join(" ")}`);
+  }
+  return URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/plain" }));
+}
+
+function characterCard(name, st, ch) {
+  const block = st.manifest.characters, prefix = ch.id.split("_").map(w => w[0].toUpperCase() + w.slice(1)).join("");
+  const draft = JSON.parse(JSON.stringify(ch));
+  const text = (get, set, width) => {
+    const i = el("input", { type: "text", style: width ? `width:${width}px` : null });
+    i.value = get();
+    i.oninput = () => set(i.value);
+    return i;
+  };
+  const color = (key, label) => {
+    const i = el("input", { type: "color", value: draft.defaults[key] });
+    i.oninput = () => (draft.defaults[key] = i.value);
+    return el("label", { class: "regions" }, i, label);
+  };
+  const move = el("select", {}, ...Object.entries(MOVES).map(([k, v]) => el("option", { value: k }, v)));
+  move.value = draft.move;
+  move.onchange = () => (draft.move = move.value);
+  return el("div", { class: "box", id: `char-${ch.id}` },
+    el("div", { class: "row" }, el("h4", { style: "margin:0" }, `${ch.label} · ${ch.defaults.name}`),
+      el("span", { class: "hint" }, `id ${ch.id}`),
+      el("button", { style: "margin-left:auto", onclick: () => removeCharacter(name, ch) }, "이 몬스터 빼기")),
+    ...st.own[ch.id].map((sheet, i) => sheetCard(name, st, sheet, block.sheets[i].about, prefix)),
+    el("fieldset", {}, el("legend", {}, "이 몬스터의 정보 (기기에서 쓰는 값)"),
+      row("이름표", text(() => draft.label, v => (draft.label = v), 90), el("span", { class: "hint" }, "스타팅 고르기 버튼에 '이름표 · 이름'으로")),
+      row("기본 이름", text(() => draft.defaults.name, v => (draft.defaults.name = v), 90)),
+      row("프리셋 이름", text(() => draft.preset, v => (draft.preset = v), 90), el("span", { class: "hint" }, "영문, 시리얼 preset 명령에 씀")),
+      row("기술 모양", move),
+      row("특징 이름", text(() => draft.accentNames[0], v => (draft.accentNames[0] = v), 90),
+          text(() => draft.accentNames[1], v => (draft.accentNames[1] = v), 90), el("span", { class: "hint" }, "강조색 두 개의 이름")),
+      el("div", { class: "row" }, el("span", { class: "k" }, "기본 색"), color("body", "몸"), color("belly", "배"),
+        color("accent", draft.accentNames[0]), color("accent2", draft.accentNames[1]), color("scarf", "목도리")),
+      el("p", { class: "hint" }, "기본 색은 기기에서 이 몬스터를 고를 때의 색입니다(설정에서 바꿀 수 있음). 시트의 견본 색과는 따로입니다."),
+      el("div", { class: "next" }, el("button", { class: "primary", onclick: () => saveCharacter(name, draft) }, "정보 저장"))));
+}
+
+function showSprites(st) {
+  const name = st.name, block = st.manifest.characters;
+  const parts = [
+    el("h3", {}, `도트 스프라이트: art/${name}/`),
+    el("p", {}, "그림은 PNG 시트입니다. '내려받기'로 받아 도트 편집기(Aseprite, Piskel, 그림판 등)로 고친 뒤 '바꾸기'로 올리거나 시트 위에 끌어다 놓으세요. 올리면 바로 검사해서 적용하고, 다음 빌드부터 들어갑니다(시뮬레이터는 저절로 다시 빌드)."),
+    el("div", { class: "box" }, el("b", {}, "모든 시트에 공통으로 지킬 것"),
+      el("ul", { class: "check" },
+        el("li", {}, "크기는 그대로: 칸 크기 × 칸 수. 2배, 3배처럼 정수배로 키운 그림도 됩니다."),
+        el("li", {}, "색은 그 시트 아래 팔레트 견본 색만 씁니다. 견본 색은 '자리'를 뜻하고, 실제 화면 색은 기기 설정(몸·배·목도리 색 등)에서 정해집니다. 비슷한 색은 가장 가까운 자리로 들어가고, 너무 다른 색은 위치와 함께 알려 주며 시트를 되돌립니다."),
+        el("li", {}, "빈 곳은 투명으로 둡니다."),
+        el("li", {}, "칸의 순서와 이름(그림 위 글자)은 펌웨어가 쓰는 것이라 그대로 둡니다."))),
+    el("h3", { style: "margin-top:18px" }, "공통 시트 (모든 몬스터가 같이 씀)"),
+    ...st.shared.map(sheet => sheetCard(name, st, sheet, sheet.about)),
+  ];
+  if (block) {
+    const others = block.list.map(c => el("option", { value: c.id }, `${c.label} · ${c.defaults.name}`));
+    const nid = el("input", { type: "text", placeholder: "예: thunder", style: "width:110px" });
+    const nlabel = el("input", { type: "text", placeholder: "예: 번개", style: "width:80px" });
+    const nname = el("input", { type: "text", placeholder: "예: 찌릿", style: "width:80px" });
+    const from = el("select", {}, ...others);
+    const blank = el("input", { type: "radio", name: "startWith", checked: true });
+    const copy = el("input", { type: "radio", name: "startWith" });
+    parts.push(
+      el("h3", { style: "margin-top:18px" }, "몬스터마다 필요한 것"),
+      el("div", { class: "box" },
+        el("p", {}, block.about),
+        el("ul", { class: "check" }, ...block.sheets.map(s => el("li", {}, `${s.png.replace("{id}", "<id>")}: ${s.about}`))),
+        el("b", {}, "칸마다 그릴 것"),
+        el("table", {}, el("tbody", {}, ...Object.entries(block.roles).map(([r, what]) =>
+          el("tr", {}, el("td", { style: "width:70px" }, el("b", {}, r)), el("td", {}, what))))),
+        el("p", { class: "hint" }, "그리고 정보: 이름표, 기본 이름, 프리셋 이름, 기술 모양, 특징(강조색) 이름 두 개, 기본 색 다섯 개.")),
+      ...block.list.map(ch => characterCard(name, st, ch)),
+      el("div", { class: "box" }, el("b", {}, "+ 몬스터 추가"),
+        el("p", { class: "hint" }, "시트 두 장이 칸 배치 그대로 만들어집니다. 내려받아 그려서 올리고, 카드에서 정보(기본 색, 기술 모양 ...)를 고치세요. 펌웨어 코드는 고치지 않아도 됩니다: 다음 빌드부터 설정의 스타팅 고르기에 나옵니다."),
+        row("id (영문)", nid), row("이름표", nlabel), row("기본 이름", nname),
+        row("시트", el("label", {}, blank, " 빈 시트 (투명, 처음부터 그리기)"), el("label", {}, copy, " 아래 몬스터의 그림 복사 (고쳐 그리기)")),
+        row("팔레트·정보", from, el("span", { class: "hint" }, "팔레트(견본 색)와 기술 모양·기본 색·특징 이름을 이 몬스터에서 가져옴")),
+        el("p", { class: "hint" }, "빈 시트는 그리기 전까지 기기에서 투명하게(안 보이게) 나옵니다. 편집기에서 격자를 칸 크기(16×16, 뒷모습 32×32)로 맞추고, 아래 '팔레트 내려받기'로 받은 견본 색으로 그리면 됩니다."),
+        el("div", { class: "next" }, el("button", { class: "primary", onclick: async () => {
+          try {
+            const r = await api("POST", `/api/sprites/add?set=${name}`,
+              { id: nid.value.trim(), label: nlabel.value.trim(), name: nname.value.trim(), from: from.value, blank: blank.checked });
+            showSprites(r);
+            const card = $(`char-${nid.value.trim()}`);
+            if (card) card.scrollIntoView({ behavior: "smooth" });
+            toast(blank.checked ? "추가했습니다. 빈 시트를 내려받아 그려서 올리세요." : "추가했습니다. 복사한 시트를 내려받아 고쳐 그려 올리세요.", true);
+          } catch (e) { toast(e.message); }
+        } }, "추가"))));
+  }
+  fill($("spritePane"), ...parts);
+}
+async function uploadSheet(name, sheet, file) {
+  try {
+    const st = await api("POST", `/api/upload?set=${name}&kind=sheet&sheet=${encodeURIComponent(sheet)}`, file);
+    toast(st.message, true);
+    showSprites(st);
+  } catch (e) { toast(e.message); }
+}
+async function saveCharacter(name, draft) {
+  try {
+    const { label, preset, move, accentNames, defaults } = draft;
+    showSprites(await api("POST", `/api/sprites/character?set=${name}&id=${draft.id}`, { label, preset, move, accentNames, defaults }));
+    toast("저장하고 다시 변환했습니다. 다음 빌드부터 들어갑니다.", true);
+  } catch (e) { toast(e.message); }
+}
+async function removeCharacter(name, ch) {
+  if (!confirm(`${ch.label} · ${ch.defaults.name} (${ch.id})를 빼고 시트 두 장을 지울까요? (git에 남아 있으면 되살릴 수 있습니다)`)) return;
+  try {
+    showSprites(await api("POST", `/api/sprites/remove?set=${name}&id=${ch.id}`));
+    toast("뺐습니다.", true);
+  } catch (e) { toast(e.message); }
+}
+
+// ---- header ----
+$("save").onclick = () => save();
+$("sets").onchange = e => loadSet(e.target.value);
+$("newSet").onclick = async () => {
+  const name = prompt("새 캐릭터 이름 (영문 소문자·숫자·_, art/<이름>/ 폴더가 됩니다)");
+  if (!name) return;
+  try {
+    await api("POST", `/api/create?name=${encodeURIComponent(name)}`);
+    S.dirty = false;
+    localStorage.setItem(`rigStudioStep:${name}`, 1);
+    await loadSets(name);
+  } catch (e) { toast(e.message); }
+};
+document.addEventListener("keydown", e => {
+  if (S.kind !== "rig") return;
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); save(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === "z" && !/INPUT|SELECT/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    const prev = S.undo.pop();
+    if (!prev) return;
+    S.rig = JSON.parse(prev);
+    showStep(S.step, true);
+    changed(true);
+  }
+});
+
+(async () => {
+  try {
+    S.slots = (await api("GET", "/api/slots")).slots;
+    S.job = await api("GET", "/api/job");
+    await loadSets();
+    if (S.job.running) pollJob();
+  } catch (e) { toast(e.message); }
+})();
+</script>
+</body>
+</html>
