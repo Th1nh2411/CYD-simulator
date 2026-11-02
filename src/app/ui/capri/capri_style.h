@@ -20,7 +20,7 @@ struct CapriConfig {
   bool cutins = true;        // close-ups flash beside her on news
   bool sound = true;         // her blips and greeting clips (boards with a speaker)
   bool voice = true;         // she says her words out loud in English (her brain's /tts), instead of blips
-  uint8_t volume = 60;       // 0 .. 100
+  uint8_t volume = 80;       // 0 .. 100, capri-desktop's tuned voice
   bool brain = true;         // a long press asks her brain (an AI on a PC, over MQTT) to talk
 };
 

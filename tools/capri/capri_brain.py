@@ -449,7 +449,11 @@ class Voice:
             with open(path, "rb") as f:
                 return f.read()
         with self.lock:  # one line at a time: Kokoro is one model
-            data = self.say_kokoro(text, p)
+            try:
+                data = self.say_kokoro(text, p)
+            except ImportError as e:  # the device blips instead
+                print(f"voice: off ({e}): run with .venv/bin/python, or .venv/bin/pip install sherpa-onnx numpy", flush=True)
+                return None
         if not data:
             return None
         os.makedirs(VOICES, exist_ok=True)
@@ -500,7 +504,7 @@ button.alt{background:#262a4a;color:#e8ecf0}.row{display:grid;grid-template-colu
 <h2>HER VOICE (try, then use)</h2>
 <div><div class=row><label>Speaker</label><select id=speaker></select><span></span></div>
 <div class=row><label>Pitch (semitones)</label><input id=pitch type=range min=-4 max=12 step=0.5><output id=po></output></div>
-<div class=row><label>Speed</label><input id=speed type=range min=0.7 max=1.5 step=0.05><output id=so></output></div></div>
+<div class=row><label>Speed</label><input id=speed type=range min=0.7 max=1.5 step=0.01><output id=so></output></div></div>
 <h2>A LINE</h2><input id=t value="Miss me, choom? Heh, okay, I'll allow it.">
 <button id=b>Say it</button><button class=alt id=use>Use for Capri</button> <span id=s></span><audio id=a></audio>
 <script>
@@ -768,8 +772,9 @@ def main():
     parser.add_argument("--model", help="Ollama model (default llama3.2)")
     parser.add_argument("--ollama", default=os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"))
     parser.add_argument("--speaker", type=int, default=53, help="Kokoro speaker (53 = her own, 2 bright, 6 sly)")
-    parser.add_argument("--speed", type=float, default=1.1, help="Kokoro speed (her own: 1.1)")
-    parser.add_argument("--pitch", type=float, default=6, help="Kokoro pitch lift in semitones (her greeting clips sit high)")
+    # capri-desktop 0.7.10's tuned voice: her own style's 1.1 at 120%, pitch +2
+    parser.add_argument("--speed", type=float, default=1.32, help="Kokoro speed (capri-desktop: 1.1 x 120%%)")
+    parser.add_argument("--pitch", type=float, default=2, help="Kokoro pitch lift in semitones (capri-desktop: +2)")
     parser.add_argument("--http", type=int, default=0, help="serve: also answer the simulator on this port (8773)")
     parser.add_argument("--no-mqtt", action="store_true", help="serve: simulator only")
     parser.add_argument("--wait", type=float, default=50, help="hook: seconds to wait for a tap on a permission")
@@ -793,5 +798,17 @@ def main():
         serve(args)
 
 
+def project_python():
+    """Runs her again on the project venv's Python when this one lacks her voice (sherpa-onnx), as
+    happens with a plain python3; without the venv she stays here and has no voice."""
+    import importlib.util
+    venv = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".venv", "bin", "python")
+    if importlib.util.find_spec("sherpa_onnx") or not os.path.isfile(venv) or os.environ.get("CAPRI_BRAIN_VENV"):
+        return
+    os.environ["CAPRI_BRAIN_VENV"] = "1"  # once: a venv without sherpa-onnx does not loop
+    os.execv(venv, [venv] + sys.argv)
+
+
 if __name__ == "__main__":
+    project_python()
     main()

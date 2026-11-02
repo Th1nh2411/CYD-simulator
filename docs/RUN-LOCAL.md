@@ -138,7 +138,7 @@ cd ~/WorkSpace/ai_services && pnpm infra:down    # RabbitMQ + PostgreSQL
 | Lỗi | Cách xử lý |
 |---|---|
 | `Address already in use` | Đã có một bản đang chạy: `pkill -f capri_brain.py` hoặc `pkill -f tools/web/sim.py`, hoặc đổi cổng (`--http 8774`, `--port 8767`) |
-| `No module named 'cv2'` / `'sherpa_onnx'` | Chạy bằng `.venv/bin/python`, không phải `python3` |
+| `No module named 'cv2'` / `'sherpa_onnx'` | Chạy bằng `.venv/bin/python`, không phải `python3` (brain tự chuyển sang `.venv` khi có; không có thì Capri không có giọng, chỉ blip) |
 | Không có tiếng | Bấm 🔊 Sound on hoặc bấm vào trang một lần |
 | Capri không trả lời TALK | Brain chưa chạy ở 8773, hoặc Ollama chưa chạy: `brew services start ollama` (log brain ghi `Ollama not reachable`) |
 | Lần TALK đầu báo offline | Model đang nạp; brain nạp sẵn khi khởi động, đợi dòng `llama3.2 loaded` |
